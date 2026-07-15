@@ -30,7 +30,10 @@ function handleSubmit() {
 }
 
 function handleKeydown(e) {
-  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey || e.shiftKey)) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault()
+    handleSubmit()
+  } else if (e.key === 'Enter' && e.shiftKey) {
     e.preventDefault()
     const el = textareaEl.value
     if (el) {
@@ -42,9 +45,6 @@ function handleKeydown(e) {
         el.selectionStart = el.selectionEnd = start + 1
       })
     }
-  } else if (e.key === 'Enter') {
-    e.preventDefault()
-    handleSubmit()
   }
 }
 
@@ -143,7 +143,7 @@ watch(text, () => nextTick(autoGrow))
   font-weight: 500;
   transition: background 0.15s;
 }
-.restart-btn:hover {
+.restart-btn:hover { 
   background: rgba(0, 0, 0, 0.04);
 }
 

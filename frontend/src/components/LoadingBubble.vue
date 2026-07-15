@@ -4,7 +4,19 @@
 
 <template>
   <div class="loading-row">
-    <div class="loading-avatar">AI</div>
+    <div class="loading-avatar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="5" y="8" width="14" height="10" rx="2" fill="#2563EB" />
+        <rect x="9" y="11" width="2.5" height="2.5" rx="0.5" fill="#fff" />
+        <rect x="12.5" y="11" width="2.5" height="2.5" rx="0.5" fill="#fff" />
+        <rect x="9.5" y="15" width="5" height="1" rx="0.5" fill="#93C5FD" />
+        <rect x="10.5" y="5" width="3" height="3" rx="1" fill="#2563EB" />
+        <rect x="11.5" y="4" width="1" height="2" rx="0.5" fill="#2563EB" />
+        <circle cx="11.5" cy="4" r="1" fill="#60A5FA" />
+        <rect x="3" y="10" width="2" height="4" rx="1" fill="#93C5FD" />
+        <rect x="19" y="10" width="2" height="4" rx="1" fill="#93C5FD" />
+      </svg>
+    </div>
     <div class="loading-bubble">
       <span class="loading-text">AI 小白正在梳理你的讲解逻辑…</span>
       <span class="dot" />
@@ -22,41 +34,45 @@
   margin: 14px 0;
   animation: fade-in 0.2s ease;
 }
+
 .loading-avatar {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
+  background: #DBEAFE;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
+
 .loading-bubble {
-  background: var(--color-bg-ai);
-  border: 1px solid var(--color-border);
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
   padding: 12px 16px;
-  border-radius: var(--radius-lg);
+  border-radius: 16px;
   border-top-left-radius: 4px;
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
+
 .loading-text {
   font-size: 14px;
-  color: var(--color-text-soft);
+  color: #64748B;
 }
+
 .dot {
   display: inline-block;
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--color-text-muted);
+  background: #64748B;
   animation: bounce-dot 1.2s infinite ease-in-out;
 }
+
 .dot:nth-child(2) { animation-delay: 0.15s; }
 .dot:nth-child(3) { animation-delay: 0.30s; }
 .dot:nth-child(4) { animation-delay: 0.45s; }

@@ -2,73 +2,79 @@ import { defineStore } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
 import { chatWithAgent, fetchGreeting, resetFeynmanSession } from '@/api/feynman'
 
-/**
- * 消息结构
- * @typedef {Object} Message
- * @property {'user' | 'ai' | 'system'} role
- * @property {string} content
- * @property {number} ts 时间戳
- */
-
-/**
- * 报告卡片 / 详阅数据
- * @typedef {Object} ReportData
- * @property {object} cardPreview
- * @property {object} finalReport
- */
-
 export const useChatStore = defineStore('chat', {
   state: () => ({
-    /** 当前会话 id */
     sessionId: '',
-    /** 消息列表 */
-    messages: /** @type {Message[]} */ ([]),
-    /** 是否锁定输入（发送中 / 已结束） */
+    messages: /** @type {{id: string, role: 'user' | 'ai' | 'system', content: string, ts: number}[]} */ ([]),
     isLocked: false,
-    /** 报告是否已生成（用于决定是否显示卡片） */
     isReportReady: false,
-    /** 报告数据 */
-    reportData: /** @type {ReportData | null} */ (null),
-    /** 错误信息（Toast 用） */
-    errorMsg: ''
+    reportData: /** @type {{cardPreview: object, finalReport: object} | null} */ (null),
+    errorMsg: '',
+    kpId: '',
+    kpName: '',
+    materialId: '',
+    materialTitle: '',
+    chapterId: '',
+    chapterTitle: '',
+    subject: ''
   }),
 
   getters: {
     hasMessages: (state) => state.messages.length > 0,
-    isFinished: (state) => state.isReportReady
+    isFinished: (state) => state.isReportReady,
+    breadcrumb: (state) => [
+      { name: state.subject || '科目', id: 'subject' },
+      { name: state.materialTitle || '教材', id: 'material' },
+      { name: state.chapterTitle || '章节', id: 'chapter' },
+      { name: state.kpName || '知识点', id: 'kp' }
+    ].filter(item => item.name && item.name !== '科目' && item.name !== '教材' && item.name !== '章节' && item.name !== '知识点')
   },
 
   actions: {
-    /**
-     * 初始化：生成 sessionId，拉取首屏引导语
-     */
-    async bootstrap() {
-      // 每次进入都重置一次，避免热更新后状态错位
+    setKnowledgePoint(kpId, kpName) {
+      this.kpId = kpId
+      this.kpName = kpName
+    },
+
+    setMaterial(materialId, materialTitle) {
+      this.materialId = materialId
+      this.materialTitle = materialTitle
+    },
+
+    setChapter(chapterId, chapterTitle) {
+      this.chapterId = chapterId
+      this.chapterTitle = chapterTitle
+    },
+
+    setSubject(subject) {
+      this.subject = subject
+    },
+
+    async bootstrap(kpId = null) {
       this.resetLocalState()
       try {
-        const greeting = await fetchGreeting()
+        const effectiveKpId = kpId || this.kpId
+        const greeting = await fetchGreeting(effectiveKpId)
+        if (greeting.kp_id) {
+          this.kpId = greeting.kp_id
+          this.kpName = greeting.kp_name || ''
+        }
         this.pushMessage('ai', greeting.reply_text)
       } catch (e) {
         this.errorMsg = e.message || '初始化失败'
       }
     },
 
-    /**
-     * 用户发送消息并请求 AI 响应
-     */
     async sendUserMessage(text) {
       const content = (text || '').trim()
       if (!content || this.isLocked) return
 
-      // 1. 上屏用户消息
       this.pushMessage('user', content)
-      // 2. 锁定输入
       this.isLocked = true
       this.errorMsg = ''
 
       try {
-        // 3. 请求后端
-        const data = await chatWithAgent(this.sessionId, content)
+        const data = await chatWithAgent(this.sessionId, content, this.kpId)
         this.handleAgentResponse(data)
       } catch (e) {
         this.pushMessage(
@@ -80,9 +86,6 @@ export const useChatStore = defineStore('chat', {
       }
     },
 
-    /**
-     * 根据 next_action 分发响应
-     */
     handleAgentResponse(data) {
       if (!data) {
         this.isLocked = false
@@ -91,7 +94,6 @@ export const useChatStore = defineStore('chat', {
 
       const { next_action, reply_text, card_preview, final_report } = data
 
-      // 1. AI 总结话术先上屏
       if (reply_text) {
         this.pushMessage('ai', reply_text)
       }
@@ -102,7 +104,6 @@ export const useChatStore = defineStore('chat', {
           cardPreview: card_preview || null,
           finalReport: final_report || null
         }
-        // 报告就绪后保持锁定，开放"重新开始"
       } else if (next_action === 'follow_up' || next_action === 'guide_topic') {
         this.isLocked = false
       } else {
@@ -124,9 +125,6 @@ export const useChatStore = defineStore('chat', {
       this.errorMsg = msg
     },
 
-    /**
-     * 重新开始：清空状态、换 sessionId、重新拉问候语
-     */
     async resetSession() {
       const oldSessionId = this.sessionId
       if (oldSessionId) {
@@ -146,6 +144,16 @@ export const useChatStore = defineStore('chat', {
       this.isReportReady = false
       this.reportData = null
       this.errorMsg = ''
+    },
+
+    clearKnowledgeContext() {
+      this.kpId = ''
+      this.kpName = ''
+      this.materialId = ''
+      this.materialTitle = ''
+      this.chapterId = ''
+      this.chapterTitle = ''
+      this.subject = ''
     }
   }
 })
